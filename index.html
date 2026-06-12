@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Códice - Estação de Escrita</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2c3e50">
+    <!-- Bibliotecas para exportação -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/docx@8.2.2/build/index.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Códice</h1>
+        <p>Para a Adri, com carinho. 🦁</p>
+        <div id="status-announcer" class="sr-only" aria-live="polite"></div>
+    </header>
+
+    <main id="app">
+        <!-- Tela de Dashboard (Lista de Arquivos) -->
+        <section id="view-dashboard">
+            <h2>Sua Estante de Textos</h2>
+            <div id="file-list" class="list-group" role="list">
+                <!-- Arquivos carregados via JS -->
+                <p>Carregando seus textos...</p>
+            </div>
+            
+            <div class="new-doc-actions">
+                <h3>Novo Documento</h3>
+                <div class="template-grid">
+                    <button onclick="app.newDoc('abnt2')">Artigo Acadêmico (ABNT2)</button>
+                    <button onclick="app.newDoc('literatura')">Literatura (Livro/Crônica)</button>
+                    <button onclick="app.newDoc('adm')">Ata de Reunião</button>
+                    <button onclick="app.newDoc('relatorio')">Relatório Técnico</button>
+                    <button onclick="app.newDoc('lista')">Lista / Check-list</button>
+                    <button onclick="app.newDoc('poesia')">Poesia / Música</button>
+                    <button onclick="app.newDoc('livre')">Escrita Livre</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tela do Editor -->
+        <section id="view-editor" style="display: none;">
+            <div class="editor-header">
+                <button onclick="app.showDashboard()">⬅ Voltar para Estante</button>
+                <h2 id="editor-title-display">Editando...</h2>
+            </div>
+
+            <div id="template-fields">
+                <!-- Campos dinâmicos conforme o template -->
+            </div>
+
+            <div class="collapsible-section">
+                <button onclick="app.toggleEditor()" class="collapsible-trigger" id="btn-toggle-editor">
+                    ➕ Mostrar Área de Edição/Colagem
+                </button>
+                <div id="editor-collapsible" style="display: none; margin-top: 10px;">
+                    <div class="label-btn-wrapper">
+                        <label id="label-active-editor" for="active-editor">Conteúdo Principal:</label>
+                        <div class="quick-actions">
+                            <button type="button" class="btn-paste-quick" onclick="app.pasteToField('active-editor')" aria-label="Colar conteúdo principal">Colar</button>
+                            <button type="button" class="btn-insert-quick" onclick="app.openInsertDialog('active-editor')" aria-label="Inserir Link ou Imagem no conteúdo">Inserir Link/Imagem</button>
+                        </div>
+                    </div>
+                    <textarea id="active-editor" class="editor-field main-textarea" placeholder="Cole seu texto aqui ou comece a escrever..." onblur="app.saveCursor('body', this.selectionStart)"></textarea>
+                </div>
+            </div>
+
+            <!-- Novo Painel de Formatação -->
+            <div class="collapsible-section">
+                <button onclick="app.toggleFormatting()" class="collapsible-trigger" id="btn-toggle-formatting">
+                    🎨 Opções de Formatação Visual
+                </button>
+                <div id="formatting-collapsible" style="display: none; margin-top: 10px;" class="formatting-panel">
+                    <div class="format-group">
+                        <label for="font-size">Tamanho da Fonte:</label>
+                        <select id="font-size" onchange="app.applyFormatting()">
+                            <option value="12pt">Padrão Acadêmico (12pt)</option>
+                            <option value="14pt">Grande (14pt)</option>
+                            <option value="16pt">Extra Grande (16pt)</option>
+                            <option value="20pt">Foco em Baixa Visão (20pt)</option>
+                        </select>
+                    </div>
+                    <div class="format-group">
+                        <label for="font-color">Cor da Letra:</label>
+                        <input type="color" id="font-color" value="#212529" onchange="app.applyFormatting()">
+                    </div>
+                    <div class="format-group">
+                        <label for="bg-editor-color">Cor de Fundo do Papel:</label>
+                        <input type="color" id="bg-editor-color" value="#ffffff" onchange="app.applyFormatting()">
+                    </div>
+                    <p><small>Nota: Estas cores e tamanhos afetam a sua visualização e a exportação para PDF/Word.</small></p>
+                </div>
+            </div>
+
+            <div id="preview-area" class="preview-box" style="display: none;">
+                <h3>Visualização de Hipertexto</h3>
+                <div id="hypertext-content"></div>
+                <button onclick="document.getElementById('preview-area').style.display='none'">Fechar Visualização</button>
+            </div>
+
+            <div class="editor-actions">
+                <button id="btn-save-cloud" class="primary">Salvar na Nuvem ☁</button>
+                <button onclick="app.showPreview()">Ver como Hipertexto (Links Clicáveis)</button>
+                
+            <!-- Painel de Exportação como Acordeão -->
+            <div class="collapsible-section">
+                <button onclick="app.toggleExport()" class="collapsible-trigger" id="btn-toggle-export">
+                    📥 Finalizar e Exportar Documento
+                </button>
+                <div id="export-collapsible" style="display: none; margin-top: 10px;" class="export-box">
+                    <p>Escolha o formato para baixar seu trabalho:</p>
+                    <button onclick="app.export('docx')" class="primary">Baixar Word (.docx)</button>
+                    <button onclick="app.export('pdf')">Baixar PDF</button>
+                    <button onclick="app.export('txt')">Baixar Texto Puro (.txt)</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Configurações -->
+        <section id="view-settings">
+            <hr>
+            <button onclick="app.toggleSettings()">Configurações de Acesso</button>
+            <div id="settings-panel" style="display: none;">
+                <label for="github-token">Token do GitHub (para salvar na nuvem):</label>
+                <input type="password" id="github-token" placeholder="ghp_...">
+                <label for="gist-id">ID do Banco de Dados (Gist):</label>
+                <input type="text" id="gist-id" placeholder="Ex: 235b9a5a8711cd562850a1edd4cea33b">
+                <button type="button" onclick="app.saveSettings()">Salvar Configurações</button>
+            </div>
+        </section>
+
+        <!-- Modal de Inserção -->
+        <dialog id="insert-dialog" class="modal">
+            <form method="dialog">
+                <h3>Inserir Mídia</h3>
+                <label for="insert-name">Nome que vai aparecer:</label>
+                <input type="text" id="insert-name" placeholder="Ex: Foto da capa, Site da faculdade">
+                
+                <label for="insert-url">URL (Link do site ou da imagem hospedada):</label>
+                <input type="url" id="insert-url" placeholder="https://...">
+
+                <div class="upload-alternative">
+                    <p>Ou, se preferir carregar um arquivo:</p>
+                    <input type="file" id="file-upload" accept="image/*,application/pdf">
+                    <p><small>O arquivo será convertido para um link de acesso permanente.</small></p>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" onclick="app.confirmInsert()">Inserir no Texto</button>
+                    <button type="button" onclick="document.getElementById('insert-dialog').close()">Cancelar</button>
+                </div>
+            </form>
+        </dialog>
+    </main>
+
+    <script src="assets/js/app.js"></script>
+</body>
+</html>
