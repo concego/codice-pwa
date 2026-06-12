@@ -325,7 +325,7 @@ const app = {
         container.innerHTML = '';
 
         if (this.docs.length === 0) {
-            container.innerHTML = '<p>Nenhum texto encontrado na sua estante.</p>';
+            container.innerHTML = '<p>Sua estante está pronta para receber seu primeiro texto!</p>';
             return;
         }
 
